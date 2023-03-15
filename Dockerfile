@@ -1,9 +1,11 @@
+ARG PG_VERSION=15
 ARG TUNE_VERSION_DEFAULT=v0.14.3
 ARG PARALLEL_COPY_VERSION_DEFAULT=v0.4.0
 ARG TIMESCALE_VERSION_DEFAULT=2.9.3
+ARG TIMESCALE_TOOLKIT_VERSION_DEFAULT=1.13.1
 ARG POSTGIS_MAJOR_DEFAULT=3
 
-FROM golang:buster as tools
+FROM golang:buster as go_tools
 ARG TUNE_VERSION_DEFAULT
 ARG PARALLEL_COPY_VERSION_DEFAULT
 ENV TUNE_VERSION $TUNE_VERSION_DEFAULT
@@ -12,9 +14,11 @@ ENV PARALLEL_COPY_VERSION $PARALLEL_COPY_VERSION_DEFAULT
 RUN go install github.com/timescale/timescaledb-tune/cmd/timescaledb-tune@${TUNE_VERSION}
 RUN go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@${PARALLEL_COPY_VERSION}
 
-FROM postgres:15-bullseye as timescale_builder
+FROM postgres:${PG_VERSION}-bullseye as timescale_builder
 ARG TIMESCALE_VERSION_DEFAULT
+ARG POSTGIS_MAJOR_DEFAULT
 ENV TIMESCALE_VERSION $TIMESCALE_VERSION_DEFAULT
+ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
 ENV DEBIAN_FRONTEND noninteractive
 ENV BUILD_PACKAGES="ca-certificates apt-utils curl git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
 
@@ -39,7 +43,25 @@ RUN rm -rf /timescaledb
 RUN apt-get purge -y ${BUILD_PACKAGES} \
     && apt-get -y autoremove
 
-FROM postgres:15-bullseye as final
+FROM postgres:${PG_VERSION}-bullseye as postgis_install
+ARG POSTGIS_MAJOR_DEFAULT
+ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
+    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+            /var/cache/debconf/* \
+            /usr/share/doc \
+            /usr/share/man \
+            /usr/share/locale/?? \
+            /usr/share/locale/??_?? \
+    && find /var/log -type f -exec truncate --size 0 {} \;
+
+FROM postgis_install as final
 ARG POSTGIS_MAJOR_DEFAULT
 ARG TUNE_VERSION_DEFAULT
 ARG PARALLEL_COPY_VERSION_DEFAULT
@@ -49,14 +71,6 @@ ENV PARALLEL_COPY_VERSION $PARALLEL_COPY_VERSION_DEFAULT
 ENV TIMESCALE_VERSION $TIMESCALE_VERSION_DEFAULT
 ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR-scripts \
-    postgresql-$PG_MAJOR-postgis-$POSTGIS_MAJOR \
-    && apt-get -y autoremove \
-    && apt-get clean \
-    && rm -rfv /var/lib/apt/lists/*
-
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY --from=timescale_builder /docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
 COPY --chmod=755 ./scripts/install-postgis.sh /docker-entrypoint-initdb.d/010_init_postgis.sh
@@ -64,5 +78,5 @@ COPY --chmod=755 ./scripts/update-postgis.sh /usr/local/bin/update-postgis.sh
 
 COPY --from=timescale_builder /usr/share/postgresql/$PG_MAJOR/extension/timescaledb* /usr/share/postgresql/$PG_MAJOR/extension/
 COPY --from=timescale_builder /usr/lib/postgresql/$PG_MAJOR/lib/timescaledb* /usr/lib/postgresql/$PG_MAJOR/lib/
-COPY --from=tools /go/bin/ /usr/local/bin/
+COPY --from=go_tools /go/bin/ /usr/local/bin/
 RUN sed -r -i "s/[#]*\s*(shared_preload_libraries)\s*=\s*'(.*)'/\1 = 'timescaledb,\2'/;s/,'/'/" /usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample
