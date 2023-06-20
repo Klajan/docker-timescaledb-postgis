@@ -44,7 +44,7 @@ RUN rm -rf /timescaledb
 RUN apt-get purge -y ${BUILD_PACKAGES} \
     && apt-get -y autoremove
 
-FROM postgres:${PG_VERSION}-bullseye as postgis_install
+FROM postgres:${PG_VERSION}-${BASE_OS} as postgis_install
 ARG POSTGIS_MAJOR_DEFAULT
 ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
 
