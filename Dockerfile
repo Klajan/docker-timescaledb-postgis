@@ -18,11 +18,15 @@ RUN go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-pa
 FROM postgres:${PG_VERSION}-${BASE_OS} as timescale_builder
 ARG TIMESCALE_VERSION_DEFAULT
 ARG POSTGIS_MAJOR_DEFAULT
+ARG BASE_OS
 ENV TIMESCALE_VERSION $TIMESCALE_VERSION_DEFAULT
 ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
 ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PACKAGES="ca-certificates apt-utils curl git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
+ENV BUILD_PACKAGES="curl ca-certificates gnupg apt-utils git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
 
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt ${BASE_OS}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 RUN apt-get update && apt-get install -y --no-install-recommends ${BUILD_PACKAGES}
 RUN apt-mark auto ${BUILD_PACKAGES}
 
