@@ -2,7 +2,7 @@ ARG PG_VERSION=15.3
 ARG BASE_OS=bookworm
 ARG TUNE_VERSION_DEFAULT=v0.14.3
 ARG PARALLEL_COPY_VERSION_DEFAULT=v0.4.0
-ARG TIMESCALE_VERSION_DEFAULT=2.11.0
+ARG TIMESCALE_VERSION_DEFAULT=2.11.2
 ARG TIMESCALE_TOOLKIT_VERSION_DEFAULT=1.13.1
 ARG POSTGIS_MAJOR_DEFAULT=3
 
@@ -22,7 +22,8 @@ ARG BASE_OS
 ENV TIMESCALE_VERSION $TIMESCALE_VERSION_DEFAULT
 ENV POSTGIS_MAJOR $POSTGIS_MAJOR_DEFAULT
 ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PACKAGES="curl ca-certificates gnupg apt-utils git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
+ENV BUILD_PACKAGES="curl ca-certificates gnupg apt-utils git gcc make cmake libssl-dev libkrb5-dev libpython3.11 pkg-config clang"
+ENV BUILD_PACKAGES_OLD="curl ca-certificates gnupg apt-utils git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg
 RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null
