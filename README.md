@@ -16,17 +16,16 @@ services:
   db:
     image: "klajan/timescaledb-postgis:latest-pg15"
     restart: unless-stopped
-	# set shared memory limit when using docker-compose
-	shm_size: 256m
+    # set shared memory limit when using docker-compose
+    shm_size: 256m
     environment:
       POSTGRES_DB: timescaledb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-	  TIMESCALEDB_TELEMETRY: basic
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /path/to/folder:/var/lib/postgresql/data
-	  # Optional: provide a shared volume to use the socket accross containers
+      # Optional: provide a shared volume to use the socket accross containers
       #- type: 'volume'
       #  source: hass-postgres-run
       #  target: /var/run/postgresql/
