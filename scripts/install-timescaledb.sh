@@ -1,17 +1,22 @@
 #!/bin/bash
 
 set -e
-create_sql=`tmp`
+create_sql=`mktemp`
+
+if [ -z "${POSTGRESQL_CONF_DIR:-}" ]; then
+	POSTGRESQL_CONF_DIR=${PGDATA}
+fi
 
 cat <<EOF >${create_sql}
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 EOF
 
-# handle telemetry preferences
 TS_TELEMETRY_LEVEL='basic'
 if [ "${TIMESCALEDB_TELEMETRY:-}" == "off" ]; then
-TS_TELEMETRY_LEVEL='off'
-cat <<EOF >>${create_sql}
+	TS_TELEMETRY_LEVEL='off'
+	# We delete the job as well to ensure that we do not spam the
+	# log with other messages related to the Telemetry job.
+	cat <<EOF >>${create_sql}
 SELECT alter_job(1,scheduled:=false);
 EOF
 fi

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-create_sql=`tmp`
+create_sql=`mktemp`
 
 cat <<EOF >${create_sql}
 CREATE DATABASE template_postgis IS_TEMPLATE true;
@@ -14,7 +14,7 @@ cat <<EOF >${create_sql}
 CREATE EXTENSION IF NOT EXISTS postgis;
 EOF
 
-if [ "${ON_INIT_INSTALL_ALL_EXTENSIONS:-false}" == 'true']; then
+if [ "${ON_INIT_INSTALL_ALL_EXTENSIONS:-false}" == 'true' ]; then
 cat <<EOF >>${create_sql}
 CREATE EXTENSION IF NOT EXISTS postgis_topology;
 \c
