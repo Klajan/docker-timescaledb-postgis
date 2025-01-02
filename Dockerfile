@@ -6,18 +6,18 @@ ARG TS_VERSION=2.17.2
 ARG TS_TOOLKIT_VERSION=1.13.1
 ARG POSTGIS_MAJOR=3
 
-FROM golang:${BASE_OS} as go_tools
+FROM golang:${BASE_OS} AS go_tools
 ARG TS_TUNE_VERSION
 ARG TS_PARALLEL_COPY_VERSION
 
 RUN go install github.com/timescale/timescaledb-tune/cmd/timescaledb-tune@${TS_TUNE_VERSION}
 RUN go install github.com/timescale/timescaledb-parallel-copy/cmd/timescaledb-parallel-copy@${TS_PARALLEL_COPY_VERSION}
 
-FROM postgres:${PG_VERSION}-${BASE_OS} as timescale_builder
+FROM postgres:${PG_VERSION}-${BASE_OS} AS timescale_builder
 ARG TS_VERSION
 ARG BASE_OS
-ENV TIMESCALE_VERSION $TS_VERSION
-ENV DEBIAN_FRONTEND noninteractive
+ENV TIMESCALE_VERSION=$TS_VERSION
+ENV DEBIAN_FRONTEND='noninteractive'
 ENV BUILD_PACKAGES="curl ca-certificates gnupg apt-utils git gcc make cmake libssl-dev libkrb5-dev postgresql-server-dev-${PG_MAJOR} pkg-config clang"
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates gnupg
@@ -46,9 +46,9 @@ RUN git clone --depth 1 https://github.com/timescale/timescaledb-extras.git
 #RUN apt-get purge -y ${BUILD_PACKAGES} \
 #    && apt-get -y autoremove
 
-FROM postgres:${PG_VERSION}-${BASE_OS} as postgis_install
+FROM postgres:${PG_VERSION}-${BASE_OS} AS postgis_install
 ARG POSTGIS_MAJOR
-ENV POSTGIS_VERSION $POSTGIS_MAJOR
+ENV POSTGIS_VERSION=$POSTGIS_MAJOR
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -67,16 +67,16 @@ RUN apt-get update \
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY --chmod=755 ./scripts/install-postgis.sh /docker-entrypoint-initdb.d/010_install_postgis.sh
 
-FROM postgis_install as final
+FROM postgis_install AS final
 ARG POSTGIS_MAJOR
 ARG TS_TUNE_VERSION
 ARG TS_PARALLEL_COPY_VERSION
 ARG TS_VERSION
-ENV TUNE_VERSION $TS_TUNE_VERSION
-ENV PARALLEL_COPY_VERSION $TS_PARALLEL_COPY_VERSION
-ENV TIMESCALE_VERSION $TS_VERSION
-ENV POSTGIS_VERSION $POSTGIS_MAJOR
-ENV INITCHECK_FOLDER "/.initcheck"
+ENV TUNE_VERSION=$TS_TUNE_VERSION
+ENV PARALLEL_COPY_VERSION=$TS_PARALLEL_COPY_VERSION
+ENV TIMESCALE_VERSION=$TS_VERSION
+ENV POSTGIS_VERSION=$POSTGIS_MAJOR
+ENV INITCHECK_FOLDER="/.initcheck"
 
 RUN mkdir -p /docker-entrypoint-initdb.d && mkdir -p /timescaledb-extras && mkdir -p /always-init.d && mkdir -p $INITCHECK_FOLDER && chmod a+w $INITCHECK_FOLDER
 COPY --from=timescale_builder /docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
