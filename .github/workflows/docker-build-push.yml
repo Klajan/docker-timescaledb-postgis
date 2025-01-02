@@ -49,8 +49,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          push: false
-          tags: klajan/timescaledb-postgis:latest-pg${{ github.event.inputs.PG_VERSION }}
+          push: true
+          tags: |
+            klajan/timescaledb-postgis:latest-pg${{ github.event.inputs.PG_VERSION }}
+            klajan/timescaledb-postgis:${{ github.event.inputs.TS_VERSION }}-pg${{ github.event.inputs.PG_VERSION }}
           build-args: |
             PG_VERSION=${{ github.event.inputs.PG_VERSION }}
             BASE_OS=${{ github.event.inputs.BASE_OS }}
