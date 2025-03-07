@@ -91,8 +91,8 @@ RUN sed -r -i "s/[#]*\s*(shared_preload_libraries)\s*=\s*'(.*)'/\1 = 'timescaled
 # since we want to run some scripts on every startup we need our own entrypoint
 COPY --chmod=755 ./docker-entrypoint-extended.sh /usr/local/bin/docker-entrypoint-extended.sh
 
-HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD pg_isready -U postgres
+HEALTHCHECK --start-period=10s --interval=10s --timeout=3s --retries=5 \
+  CMD pg_isready -U ${POSTGRES_USER}
 
 ENTRYPOINT ["docker-entrypoint-extended.sh"]
 CMD ["postgres"]
