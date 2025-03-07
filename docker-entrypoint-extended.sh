@@ -46,7 +46,7 @@ if [ $should_run_init -ge 1 ]; then
 
 		cat <<-'EOM'
 
-			PostgreSQL init process complete; ready for start up.
+			PostgreSQL init process complete;
 
 		EOM
 	else
@@ -54,7 +54,7 @@ if [ $should_run_init -ge 1 ]; then
 
 		cat <<-'EOM'
 
-			PostgreSQL Database directory appears to contain a database; Skipping initialization
+			PostgreSQL Database directory appears to contain a database; Skipping initialization.
 
 		EOM
 	fi
@@ -63,24 +63,32 @@ if [ $should_run_init -ge 1 ]; then
 	# these will run even if the db is already initialized
 
 	for file in /always-init.d/*.sh; do
-		if [ -x "$file" ]; then
+ 		echo "$file"
+		if [ -x "$file" ]; then 
 			printf '%s: running %s\n' "$0" "$f"
 			"$file"
 		fi
 	done
 	for file in /always-init.d/*.sql; do
+ 		echo "$file"
 		if [ -f "$file" ]; then
 			printf '%s: running %s\n' "$0" "$f"
-			docker_process_sql -f "$f"; printf
+			docker_process_sql -f "$f";
 		fi
 	done
 
 	docker_temp_server_stop
 	unset PGPASSWORD
+
+ 	cat <<-'EOM
+
+    		PostgreSQL Database ready for startup;
+
+      	EOM
 else
 	cat <<-'EOM'
 
-			Container appears to be unchanged; Skipping initialization.
+		Container appears to be unchanged; Skipping initialization.
 
 	EOM
 fi
