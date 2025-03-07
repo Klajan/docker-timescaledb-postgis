@@ -80,7 +80,7 @@ if [ $should_run_init -ge 1 ]; then
 	docker_temp_server_stop
 	unset PGPASSWORD
 
- 	cat <<-'EOM
+ 	cat <<-'EOM'
 
     		PostgreSQL Database ready for startup;
 
