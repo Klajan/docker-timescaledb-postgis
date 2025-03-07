@@ -92,7 +92,7 @@ RUN sed -r -i "s/[#]*\s*(shared_preload_libraries)\s*=\s*'(.*)'/\1 = 'timescaled
 COPY --chmod=755 ./docker-entrypoint-extended.sh /usr/local/bin/docker-entrypoint-extended.sh
 
 HEALTHCHECK --start-period=10s --interval=10s --timeout=3s --retries=5 \
-  CMD pg_isready
+  CMD pg_isready -U ${POSTGRES_USER} postgres
 
 ENTRYPOINT ["docker-entrypoint-extended.sh"]
 CMD ["postgres"]
